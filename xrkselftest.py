@@ -1,8 +1,10 @@
 """Self test for the xrk* modules: decode a few known x86 encodings.
 
-Run from this directory:   python xrkselftest.py
+Usage: python xrkselftest.py
 Exits non-zero when a case does not match, so it can gate a commit.
 """
+import sys
+
 from xrkdsm import XrkDecode, XrkText
 
 CASES = (
@@ -34,4 +36,7 @@ def main():
 
 
 if __name__ == "__main__":
+	if "-h" in sys.argv[1:] or "--help" in sys.argv[1:]:
+		print(__doc__.strip())
+		raise SystemExit(0)
 	raise SystemExit(main())
