@@ -702,7 +702,7 @@ class Defus:
 		  (op0.operand[0].ID == ID_REG and op1.operand[0].ID == ID_MEM32 and (op0.operand[0].value & 0xf) == 3) or\
 		  (op0.operand[0].ID == ID_MEM32 and op1.operand[0].ID == ID_REG and (op1.operand[0].value & 0xf) == 3) or\
 		  (op0.operand[0].ID == ID_REG and op1.operand[0].ID == ID_MEM16 and (op0.operand[0].value & 0xf) == 2) or\
-		  (op0.operand[0].ID == ID_MEM16 and op1.operand[0].ID == ID_REG and (op1.operand[0].value & 0xf) == 2) or\	
+		  (op0.operand[0].ID == ID_MEM16 and op1.operand[0].ID == ID_REG and (op1.operand[0].value & 0xf) == 2) or\
 		  (op0.operand[0].ID == ID_REG and op1.operand[0].ID == ID_REG) or\
 		  (op0.operand[0].ID == ID_VAL32 and op1.operand[0].ID == ID_REG) or\
 		  (op0.operand[0].ID == ID_VAL16 and op1.operand[0].ID == ID_REG) ):
