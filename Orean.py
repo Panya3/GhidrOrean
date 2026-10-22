@@ -9,6 +9,7 @@
 
 #TODO Add User Code Here
 
+import os
 import struct
 from xrkdsm import *
 from xrkutil import *
@@ -18,7 +19,24 @@ import thfish
 import thtiger
 from thobfus import *
 
-WRKDIR = "/home/marisa/ghidra_scripts"
+
+# Ghidra's script manager sets __file__; the CISC/FISH/RISC/TIGER config dirs
+# sit next to this script, so that is the default workspace.  OREAN_WRKDIR
+# overrides it (upstream hardcoded the original author's home directory).
+def _wrkdir():
+	here = os.environ.get("OREAN_WRKDIR")
+	if here:
+		return here
+	src = globals().get("__file__")
+	if src:
+		d = os.path.dirname(os.path.abspath(src))
+		for cand in (d, os.path.dirname(d)):
+			if os.path.isdir(os.path.join(cand, "CISC")):
+				return cand
+	return "/home/marisa/ghidra_scripts"
+
+
+WRKDIR = _wrkdir()
 
 DEBUG = 2
 
