@@ -31,3 +31,18 @@ Verify with:
 
     python xrkselftest.py
 
+
+## Offline tools (no Ghidra)
+
+`tools/` holds CPython 3 helpers for the steps that do not need Ghidra at all:
+unpack an Oreans container to a PE, decode a section's bytecode to text, and run
+the dejunk pass outside the IDE.
+
+    python tools/unpack_vlizer.py sample.xem sample_unpacked.exe
+    python tools/xrkdecode.py sample_unpacked.exe --size 0x400
+    python tools/defus_offline.py sample_unpacked.exe --rva <rva> --size <n>
+
+See `tools/README.md` for what is and is not covered, and run
+`python tools/selftest.py` (it builds its own inputs, no sample needed).
+These are plain CPython 3 scripts, not Jython: `Orean.py` never imports them.
+
