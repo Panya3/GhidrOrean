@@ -9,7 +9,11 @@ Every check builds its own inputs, so no sample file is needed:
     unpack_vlizer synthetic container -> LZMA_Alone round trip (its own selftest)
     xrkdsm        a fixed 17-byte vector decodes to the expected instructions
     thobfus       the dejunk engine imports on CPython 3 and exposes Defus
+    OreanOffline  the drop path: synthetic container -> 10/20/30 artefacts
 """
+import contextlib
+import io
+import lzma
 import os
 import struct
 import sys
@@ -24,9 +28,11 @@ for _p in (HERE, REPO):
 import peread  # noqa: E402
 
 FAILS = []
+TOTAL = [0]
 
 
 def check(name, ok, detail=""):
+    TOTAL[0] += 1
     print("  [%s] %s%s" % ("PASS" if ok else "FAIL", name,
                           ("  " + str(detail)) if detail else ""))
     if not ok:
@@ -49,6 +55,34 @@ def synth_pe():
     d[sh:sh + 8] = b".vlizer\0"
     struct.pack_into("<IIII", d, sh + 8, 0x1000, 0x1000, 0x200, 0x200)
     return bytes(d), sh
+
+
+def synth_container(payload):
+    """PE32+ whose .vlizer section holds [stub][LZMA_Alone(payload)].
+
+    Same shape as a real *.xem, so the whole drop path (unpack -> decode ->
+    dejunk) can be exercised without shipping a sample.
+    """
+    stream = lzma.compress(payload, format=lzma.FORMAT_ALONE)
+    stubsz = 0x40
+    body = bytearray(stubsz) + stream
+    struct.pack_into("<I", body, 0, 1)                 # version
+    struct.pack_into("<I", body, 8, len(stream))       # csize  (4-byte fields)
+    struct.pack_into("<I", body, 0x18, stubsz)         # stub size
+    raw = 0x200
+    d = bytearray(raw) + bytes(body)
+    struct.pack_into("<I", d, 0x3C, 0x40)              # e_lfanew
+    d[0x40:0x44] = b"PE\0\0"
+    struct.pack_into("<H", d, 0x44, 0x8664)            # machine = x86-64
+    struct.pack_into("<H", d, 0x46, 1)                 # NumberOfSections
+    struct.pack_into("<H", d, 0x54, 0xF0)              # SizeOfOptionalHeader
+    opt = 0x40 + 24
+    struct.pack_into("<H", d, opt, 0x20B)              # PE32+
+    struct.pack_into("<Q", d, opt + 24, 0x140000000)   # ImageBase
+    sh = opt + 0xF0
+    d[sh:sh + 8] = b".vlizer\0"
+    struct.pack_into("<IIII", d, sh + 8, len(body), 0x1000, len(body), raw)
+    return bytes(d)
 
 
 # Bytecode taken from a real listing; every instruction is unambiguous.
@@ -107,8 +141,42 @@ def main():
     import thobfus
     check("Defus importable", hasattr(thobfus, "Defus"))
 
+    print("OreanOffline")
+    import OreanOffline
+    quiet = contextlib.redirect_stdout(io.StringIO())
+    with quiet:
+        noargs = OreanOffline._main([])
+    check("no arguments -> usage, exit 2", noargs == 2, noargs)
+
+    tmp = tempfile.mkdtemp()
+    try:
+        for name in ("a.xem", "notes.txt", "b.dll"):
+            open(os.path.join(tmp, name), "wb").write(b"MZ")
+        got = sorted(os.path.basename(p) for p in OreanOffline.expand([tmp]))
+        check("dropped folder -> containers only", got == ["a.xem", "b.dll"], got)
+
+        payload = b"\x60\x8b\x44\x24\x04\x50" * 40
+        src = os.path.join(tmp, "drop.xem")
+        open(src, "wb").write(synth_container(payload))
+        with quiet:
+            rc = OreanOffline.one(src, tmp)
+        work = os.path.join(tmp, "drop")
+        made = sorted(f for f in os.listdir(work)) if os.path.isdir(work) else []
+        check("drop path: unpack -> decode -> dejunk", rc and made == [
+            "10_unpacked.exe", "20_payload.lst", "30_dejunk.lst"], made)
+        lst = os.path.join(work, "20_payload.lst")
+        body = open(lst, encoding="utf-8").read() if os.path.exists(lst) else ""
+        check("drop path: listing has the whole payload",
+              body.count("\n") >= 120, "%d lines" % body.count("\n"))
+    finally:
+        for root_, _dirs, files in os.walk(tmp, topdown=False):
+            for name in files:
+                os.unlink(os.path.join(root_, name))
+            os.rmdir(root_)
+
     print("\nselftest: %s (%d checks)"
-          % ("PASS" if not FAILS else "FAIL, " + ", ".join(FAILS), 12 - len(FAILS)))
+          % ("PASS" if not FAILS else "FAIL, " + ", ".join(FAILS),
+             TOTAL[0] - len(FAILS)))
     return 0 if not FAILS else 1
 
 

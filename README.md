@@ -42,7 +42,16 @@ the dejunk pass outside the IDE.
     python tools/xrkdecode.py sample_unpacked.exe --size 0x400
     python tools/defus_offline.py sample_unpacked.exe --rva <rva> --size <n>
 
+Or do all three in one go - `tools/OreanOffline.py` (and the `.exe` that
+`tools/build_exe.ps1` freezes from it) accepts a dropped file and writes the
+artefacts next to it:
+
+    python tools/OreanOffline.py sample.xem
+    powershell -ExecutionPolicy Bypass -File tools/build_exe.ps1
+
 See `tools/README.md` for what is and is not covered, and run
 `python tools/selftest.py` (it builds its own inputs, no sample needed).
 These are plain CPython 3 scripts, not Jython: `Orean.py` never imports them.
+`Orean.py` itself stays a Ghidra script - it needs the imported program - so it
+cannot be frozen into an `.exe`.
 
