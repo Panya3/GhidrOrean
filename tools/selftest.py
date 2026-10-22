@@ -168,6 +168,14 @@ def main():
         body = open(lst, encoding="utf-8").read() if os.path.exists(lst) else ""
         check("drop path: listing has the whole payload",
               body.count("\n") >= 120, "%d lines" % body.count("\n"))
+
+        out2 = os.path.join(tmp, "dec.lst")
+        with quiet:
+            rc2 = OreanOffline._main(["decode", os.path.join(work, "10_unpacked.exe"),
+                                      "--size", "0x10", "--out", out2])
+        check("stage passthrough keeps the stage's own --out",
+              rc2 == 0 and os.path.exists(out2) and os.path.getsize(out2) > 0,
+              "rc=%s" % rc2)
     finally:
         for root_, _dirs, files in os.walk(tmp, topdown=False):
             for name in files:

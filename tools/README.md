@@ -85,4 +85,4 @@ Jython-compatible: they are not Ghidra scripts and are never imported by
 
 ## Verify
 
-    python tools/selftest.py        # 16 checks, builds its own containers
+    python tools/selftest.py        # 17 checks, builds its own containers

@@ -131,7 +131,11 @@ def one(src, outroot, window=DEJUNK_WINDOW):
           % ("20_payload.lst" if ok else "failed", time.time() - t0))
 
     w = size if window is None else min(window, size)
-    ok2 = dejunk(pe, rva, size, w, os.path.join(work, "30_dejunk.lst"))
+    try:
+        ok2 = dejunk(pe, rva, size, w, os.path.join(work, "30_dejunk.lst"))
+    except SystemExit as e:
+        print("   dejunk: %s" % (e.code if isinstance(e.code, str) else "failed"))
+        ok2 = False
     if w < size:
         print("   (rerun with --full to dejunk the whole payload)")
     return ok and ok2
@@ -162,6 +166,10 @@ def _main(argv):
         return 0 if argv else 2
 
     out, window = None, DEJUNK_WINDOW
+    if argv[0] in STAGES:                        # single stage, own options
+        return run({"unpack": unpack_vlizer, "decode": xrkdecode,
+                    "dejunk": defus_offline}[argv[0]], argv[1:])
+
     if "--full" in argv:
         window = None
         argv.remove("--full")
@@ -172,12 +180,6 @@ def _main(argv):
             return 2
         out = argv[i + 1]
         del argv[i:i + 2]
-
-    if argv[0] in STAGES:                        # single stage, own options
-        stage, rest = argv[0], argv[1:]
-        mod = {"unpack": unpack_vlizer, "decode": xrkdecode,
-               "dejunk": defus_offline}[stage]
-        return run(mod, rest)
 
     inputs = list(expand(argv))
     if not inputs:
