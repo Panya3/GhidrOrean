@@ -71,7 +71,10 @@ imported program and a cursor, so it stays a Ghidra script (use
   finds no wild-VM signature; it is not whole-function CFG/liveness DCE.
 * The `.exe` is the static half only: no sample is ever executed, so full
   devirtualisation still needs a runtime trace (`vmtrace` in the parent repo)
-  or the Ghidra side.
+  or the Ghidra side.  The parent repo's `deob.exe` does that too - it bundles
+  the tracer and `--run host.exe` recovers the opcode -> handler map, derives
+  per-opcode semantics and inlines the observed programme as native x86-64 in
+  one process (`--selftest-vm` proves that half on a synthetic VM).
 * Decoding assumes the section is already decrypted/decompressed (it is, after
   `unpack_vlizer.py`).  On a protected file straight from disk the bytes are
   compressed+encrypted, the listing is meaningless by construction and the tool
