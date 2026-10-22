@@ -1662,7 +1662,7 @@ class Defus:
 				 op3.operand[1].GetB(0) == op2.operand[0].GetB(0)) or\
 			    (op2.operand[1].ID == op3.operand[1].ID and\
 				 op2.operand[1].val2 == op3.operand[1].val2 and\
-		         op2.operand[1].value == op3.operand[1].value and\
+			 op2.operand[1].value == op3.operand[1].value and\
 				 op3.operand[0].GetB(0) == op2.operand[0].GetB(0))):
 				 
 				op0.ID = OP_NEG
@@ -1787,7 +1787,7 @@ class Defus:
 			   op1.ID == OP_MOV and \
 			   op1.operand[0].IsMemBase0(R_ESP):
 				op0.operand[0] = op1.operand[1].Copy()
-		 		op1.ID = 0
+				op1.ID = 0
 			i += 1
 
 		self.Cleaner()
@@ -1803,7 +1803,7 @@ class Defus:
 			if op0.ID == OP_PUSHA and \
 			   op1.ID == OP_POPA:
 				op0.ID = 0
-		 		op1.ID = 0
+				op1.ID = 0
 			i += 1
 
 		self.Cleaner()

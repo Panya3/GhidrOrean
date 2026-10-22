@@ -4,7 +4,7 @@ from thobfus import *
 from xrkasm import *
 from thvm import *
 from __main__ import *
-import ConfigParser
+import configparser
 
 
 class CHNDL:
@@ -138,8 +138,8 @@ class CISC(VM):
             print("Can't load CISC/CiscInstruction.cfg")
             return
 
-        cfg = ConfigParser.ConfigParser(allow_no_value=True)
-        cfg.readfp(f)
+        cfg = configparser.ConfigParser(allow_no_value=True)
+        cfg.read_file(f)
 
         for i in range(0x1000):
             try:

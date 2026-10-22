@@ -8,13 +8,13 @@ import thobfus
 class xrkAsm:
 	dbg = False
 	lookup = None
-	tables = (OP_1B, OP_2B, OP_80x, OP_81x, OP_82x, OP_83x, OP_8Fx, OP_C0x,\ #8
-			  OP_C1x, OP_D0x, OP_D1x, OP_D2x, OP_D3x, OP_C6x, OP_C7x, OP_D8Cx,\ #16
-			  OP_D8x, OP_D9Cx, OP_D9x, OP_DACx, OP_DAx, OP_DBCx, OP_DBx, OP_DCCx,\ #24
-			  OP_DCx, OP_DDCx, OP_DDx, OP_DECx, OP_DEx, OP_DFCx, OP_DFx, OP_F6x,\ #32
-			  OP_F7x, OP_FEx, OP_FFx, OP_F20F1x, OP_F30F1x, OP_660F1x, OP_F20F2x, OP_F30F2x,\ #40
-			  OP_660F2x, OP_F20F5x, OP_F30F5x, OP_660F5x, OP_F30F6x, OP_660F6x, OP_F20F7x, OP_F30F7x,\ #48
-			  OP_660F7x, OP_F30FBx, OP_F20FCx, OP_F30FCx, OP_660FCx, OP_F20FDx, OP_F30FDx, OP_660FDx,\ #56
+	tables = (OP_1B, OP_2B, OP_80x, OP_81x, OP_82x, OP_83x, OP_8Fx, OP_C0x, #8
+			  OP_C1x, OP_D0x, OP_D1x, OP_D2x, OP_D3x, OP_C6x, OP_C7x, OP_D8Cx, #16
+			  OP_D8x, OP_D9Cx, OP_D9x, OP_DACx, OP_DAx, OP_DBCx, OP_DBx, OP_DCCx, #24
+			  OP_DCx, OP_DDCx, OP_DDx, OP_DECx, OP_DEx, OP_DFCx, OP_DFx, OP_F6x, #32
+			  OP_F7x, OP_FEx, OP_FFx, OP_F20F1x, OP_F30F1x, OP_660F1x, OP_F20F2x, OP_F30F2x, #40
+			  OP_660F2x, OP_F20F5x, OP_F30F5x, OP_660F5x, OP_F30F6x, OP_660F6x, OP_F20F7x, OP_F30F7x, #48
+			  OP_660F7x, OP_F30FBx, OP_F20FCx, OP_F30FCx, OP_660FCx, OP_F20FDx, OP_F30FDx, OP_660FDx, #56
 			  OP_F20FEx, OP_F30FEx, OP_660FEx, OP_F20FFx, OP_660FFx, OP_0FBAx)
 
 	MtoID = None

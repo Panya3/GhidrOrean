@@ -1,8 +1,8 @@
 from __main__ import *
 import re
-import collections
+import collections.abc
 
-class ROSlice(collections.Sequence):
+class ROSlice(collections.abc.Sequence):
 	def __init__(self, alist, start, alen = 0):
 		self.alist = alist
 		self.start = start

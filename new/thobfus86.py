@@ -9,8 +9,8 @@ import inspect
 import binascii
 
 JCC_LIST = (UD_Ija, UD_Ijae, UD_Ijb, UD_Ijbe, UD_Ijz, UD_Ijnz,
-	        UD_Ijg, UD_Ijge, UD_Ijl, UD_Ijle, UD_Ijo, UD_Ijno,
-	        UD_Ijp, UD_Ijnp, UD_Ijs, UD_Ijns, UD_Ijcxz, UD_Ijecxz, UD_Ijrcxz)
+		UD_Ijg, UD_Ijge, UD_Ijl, UD_Ijle, UD_Ijo, UD_Ijno,
+		UD_Ijp, UD_Ijnp, UD_Ijs, UD_Ijns, UD_Ijcxz, UD_Ijecxz, UD_Ijrcxz)
 
 class InsEntry:
 	instr = udis86.ud()
@@ -483,7 +483,7 @@ class InsList:
 		   op1.operand[0].base == op0.operand[0].base and \
 		   op1.operand[1].type == UD_OP_REG and \
 		   op1.operand[1].base in (UD_R_ESP, UD_R_RSP) and \
- 			\
+			\
 		   op2.mnemonic == UD_Iadd and \
 		   op2.operand[0].type == UD_OP_REG and \
 		   op2.operand[0].base == op0.operand[0].base and \
@@ -532,7 +532,7 @@ class InsList:
 		if op0.mnemonic == UD_Ixor and\
 		   op1.mnemonic == UD_Ixor and\
 		   op2.mnemonic == UD_Ixor and\
-	   		op0.operand[0].isSame( op1.operand[1] ) and \
+			op0.operand[0].isSame( op1.operand[1] ) and \
 			op0.operand[1].isSame( op1.operand[0] ) and \
 		    op1.operand[1].isSame( op2.operand[0] ) and \
 			op1.operand[0].isSame( op2.operand[1] ):
@@ -657,7 +657,7 @@ class InsList:
 		   op3.operand[1].isSame( op1.operand[0] ) and\
 		   op4.operand[0].base == op0.operand[0].base:
 
-	   		newval = 0
+			newval = 0
 			if op3.operand[0].type == UD_OP_REG:
 				s,newval = ComputeVal(op3.mnemonic, op3.operand[0].size, op2.operand[1].lval.uqword, op1.operand[1].lval.uqword)
 			elif op3.operand[0].type == UD_OP_MEM:
@@ -1763,7 +1763,7 @@ class InsList:
 			   op1.mnemonic == UD_Imov and \
 			   op1.operand[0].BISO() in ((UD_R_ESP, 0, 0, 0), (UD_R_RSP, 0, 0, 0)):
 				op0.operand[0] = op1.operand[1].Copy()
-		 		op1.mnemonic = UD_Inone
+				op1.mnemonic = UD_Inone
 			i += 1
 
 		self.Cleaner()
@@ -1779,7 +1779,7 @@ class InsList:
 			if op0.mnemonic == UD_Ipusha and \
 			   op1.mnemonic == UD_Ipopa:
 				op0.mnemonic = UD_Inone
-		 		op1.mnemonic = UD_Inone
+				op1.mnemonic = UD_Inone
 			i += 1
 
 		self.Cleaner()

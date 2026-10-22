@@ -107,9 +107,11 @@ class rkInstruction:
 	size = 0
 	
 	def __init__(self):
+		from xrkopr import OperandInfo # xrkopr imports xrkdsm, so keep the cycle lazy
 		self.operand = [OperandInfo(), OperandInfo(), OperandInfo(), OperandInfo()]
 	
 	def Clear(self):
+		from xrkopr import OperandInfo # xrkopr imports xrkdsm, so keep the cycle lazy
 		self.ID = 0
 		self.op2x3x6x = 0
 		self.op66 = 0
