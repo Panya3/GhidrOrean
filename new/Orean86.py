@@ -37,6 +37,9 @@ def _wrkdir():
 
 
 WRKDIR = _wrkdir()
+if not os.path.isdir(os.path.join(WRKDIR, "CISC")):
+	print("Orean86: WRKDIR=%s has no CISC/ - point OREAN_WRKDIR at the "
+	      "GhidrOrean checkout" % WRKDIR)
 
 DEBUG = 2
 
@@ -182,7 +185,7 @@ def main(addr):
 		for l in CMDSimpler.GetListing(True, False):
 			xlog("{}".format(l))
 	elif vmSig == 0:
-		vm = thtiger.TIGER(WRKDIR)
+		vm = thtiger.TIGER(BITS, WRKDIR)
 
 
 		mblock = GetMemBlockInfo(begaddr)

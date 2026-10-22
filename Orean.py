@@ -37,6 +37,9 @@ def _wrkdir():
 
 
 WRKDIR = _wrkdir()
+if not os.path.isdir(os.path.join(WRKDIR, "CISC")):
+	print("Orean: WRKDIR=%s has no CISC/ - point OREAN_WRKDIR at the "
+	      "GhidrOrean checkout" % WRKDIR)
 
 DEBUG = 2
 
