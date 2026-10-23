@@ -47,6 +47,11 @@ against 49800 / 2385 on the x64 one (+0.08 pp).  Every cut is still proven
 under the capstone that ran, and the x86 artefacts pass `verify_devirt.py`
 15/15 under the x64 checker.
 
+The prebuilt binaries are attached to the `deob-v1.0` release
+(<https://github.com/Panya3/GhidrOrean/releases/tag/deob-v1.0>, tag on
+`4d6d0b3`) together with `SHA256SUMS.txt`; a bare clone needs nothing but
+Python 3 and capstone to run `autodeob.py` instead.
+
 ## Layout
 
 | file | role |
