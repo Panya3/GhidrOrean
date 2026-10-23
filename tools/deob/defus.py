@@ -14,9 +14,9 @@ extracted (see unpack.py). The only upstream coupling is `vm.tp` (machine
 type) and `xlog`.
 
 Usage:
-    python defus.py _analysis/out/x3_unpacked.exe --rva 0x2FC000 --size 0x2000
-    python defus.py _analysis/out/x3_unpacked.exe --rva 0x2FC000 --size 0x1C2000 \
-                   --out _analysis/out/x3_dejunk.lst
+    python defus.py out/auto/x3/10_unpacked.exe --rva 0x2FC000 --size 0x2000
+    python defus.py out/auto/x3/10_unpacked.exe --rva 0x2FC000 --size 0x1C2000 \
+                   --out out/auto/x3/30_dejunk.lst
 """
 import argparse
 import contextlib

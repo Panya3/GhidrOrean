@@ -33,8 +33,8 @@ Soundness rules (deliberately conservative):
   * an unknown successor edge makes every register + flags live at that point
 
 Usage (never executes the sample):
-    python _analysis/cfgpass.py _analysis/out/auto/x3/10_unpacked.exe --out 40_cfg.lst
-    python _analysis/cfgpass.py <pe> --size 0x20000 --show-removed --stats
+    python cfgpass.py out/auto/x3/10_unpacked.exe --out 40_cfg.lst
+    python cfgpass.py <pe> --size 0x20000 --show-removed --stats
 """
 import argparse
 import collections

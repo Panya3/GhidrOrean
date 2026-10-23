@@ -1,4 +1,4 @@
-"""Shared CLI conventions for the _analysis one-file tools.
+"""Shared CLI conventions for the one-file tools in this directory.
 
 `-h` / `--help` prints the tool's own docstring and exits 0; a missing positional
 argument prints the same text and exits 2. Nothing in the toolbox should ever die

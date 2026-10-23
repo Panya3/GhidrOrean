@@ -37,10 +37,10 @@ What is NOT claimed (see REPORT 7.7)
       model (vmlift reports such an opcode as ambiguous)
 
 Usage:
-    python _analysis/vminline.py vmtrace.jsonl --asm-out 43_inline.asm
+    python vminline.py vmtrace.jsonl --asm-out 43_inline.asm
            --blob-out 43_inline.bin --expect-from-trace --run
-    python _analysis/vminline.py vmtrace.jsonl --ops 1,2,3 --seed 00112233...
-    python _analysis/vminline.py --selftest
+    python vminline.py vmtrace.jsonl --ops 1,2,3 --seed 00112233...
+    python vminline.py --selftest
 """
 import argparse
 import ctypes

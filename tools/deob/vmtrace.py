@@ -35,7 +35,7 @@ SAFETY - read this before running anything
     The default is a dry run: it prints the breakpoint plan and exits.
   * --selftest runs a *benign* system binary and kills it at its entry point.
     That is how the debugger machinery is validated without touching a sample:
-        python _analysis/vmtrace.py --selftest
+        python vmtrace.py --selftest
   * --selftest-vm goes further and proves the *recovery*: vmfix.py builds a real
     PE that is a bytecode VM (9 handlers, `jmp rdx`) with a known opcode ->
     handler map *and* known per-opcode semantics, this tool traces it with
@@ -47,14 +47,14 @@ SAFETY - read this before running anything
 Architecture note (WOW64): a 64-bit Python cannot debug a 32-bit process and
 vice versa.  The target's PE header decides; on a mismatch the tool refuses
 instead of silently tracing nothing.  For the 32-bit x3 payload use:
-    py -3.11-32 _analysis/vmtrace.py --exec target.exe --auto-from ...
+    py -3.11-32 vmtrace.py --exec target.exe --auto-from ...
 
 Usage:
-    python _analysis/vmtrace.py --selftest-vm        # differential test (fixture VM)
-    python _analysis/vmtrace.py --selftest           # benign system binary
-    python _analysis/vmtrace.py --dry-run target.exe --auto-from out\\auto\\x3\\10_unpacked.exe
-    py -3.11-32 _analysis/vmtrace.py --exec target.exe --auto-from ... --follow 12 --max-hits 500
-    py -3.11-32 _analysis/vmtrace.py --exec target.exe --auto-from ... \\
+    python vmtrace.py --selftest-vm        # differential test (fixture VM)
+    python vmtrace.py --selftest           # benign system binary
+    python vmtrace.py --dry-run target.exe --auto-from out\\auto\\x3\\10_unpacked.exe
+    py -3.11-32 vmtrace.py --exec target.exe --auto-from ... --follow 12 --max-hits 500
+    py -3.11-32 vmtrace.py --exec target.exe --auto-from ... \\
            --until-return --snapshot 64 --snapshot-from reg:esi --max-hits 500
 """
 import argparse
@@ -923,8 +923,12 @@ def main(argv=None):
     if err or t.error:
         print("note      : %s" % (err or t.error))
     print("trace     : %s" % a.out)
-    print("next      : python _analysis\\vmlift.py %s --opcode-from %s"
-          % (a.out, "mem" if a.ctx_ptr else "reg:eax"))
+    if getattr(sys, "frozen", False):        # shipped exe: vmlift.py is not on disk
+        print("next      : %s <sample> --trace %s"
+              % (os.path.basename(sys.executable), a.out))
+    else:
+        print("next      : python vmlift.py %s --opcode-from %s"
+              % (a.out, "mem" if a.ctx_ptr else "reg:eax"))
     return 0
 
 

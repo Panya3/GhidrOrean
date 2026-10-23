@@ -28,13 +28,13 @@ folds a file produced earlier; `--run` drives the same tracer in-process.
 `--selftest-vm` proves that half on a synthetic VM, which is the only binary it
 will ever launch on its own.
 
-Usage:
-    python _analysis/autodeob.py XIGNCODE                    # whole directory
-    python _analysis/autodeob.py XIGNCODE/x3.xem             # single file
-    python _analysis/autodeob.py "XIGNCODE/*.xem" --out out2
-    python _analysis/autodeob.py XIGNCODE/x3.xem --dejunk-size 0   # full payload
-    python _analysis/autodeob.py sample.xem --run Host.exe    # + live trace
-    python _analysis/autodeob.py --selftest-vm                # dynamic half, no sample
+Usage (from this file's directory, or give it the full path):
+    python autodeob.py XIGNCODE                    # whole directory
+    python autodeob.py XIGNCODE/x3.xem             # single file
+    python autodeob.py "XIGNCODE/*.xem" --out out2
+    python autodeob.py XIGNCODE/x3.xem --dejunk-size 0   # full payload
+    python autodeob.py sample.xem --run Host.exe    # + live trace
+    python autodeob.py --selftest-vm                # dynamic half, no sample
 
 Drag & drop: use deob.cmd in the repo root (accepts files and folders).
 """
@@ -557,7 +557,10 @@ def process(path, outroot, opts):
                              v["skipped"]))
 
     if opts.run:
-        got = stage_run(workdir, res, opts, pe)   # pe may be None: -run-opt
+        # pe is the *unpacked* payload; without it vmtrace has no sites to break
+        # on (it scans a .vlizer-style section) - so --run needs the static half
+        # to have produced one, i.e. a genuinely protected host, not plain-pe
+        got = stage_run(workdir, res, opts, pe)
         if got:
             opts.trace = got                # fold it right below, same report
             vm = res["vm"]
@@ -639,7 +642,7 @@ def write_summary(results, outroot):
         except Exception:
             continue
 
-    tool = os.path.basename(sys.executable) if FROZEN else "_analysis/autodeob.py"
+    tool = os.path.basename(sys.executable) if FROZEN else "autodeob.py"
     lines = [
         "# autodeob summary",
         "",

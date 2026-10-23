@@ -30,11 +30,11 @@ What it emits
   * `--json`: machine-readable map for further passes
 
 Usage:
-    python _analysis/vmlift.py vmtrace.jsonl
-    python _analysis/vmlift.py vmtrace.jsonl --opcode-from mem --emit-x86 41_lift.asm
-    python _analysis/vmlift.py vmtrace.jsonl --opcode-from reg:eax --mask 0xff
-    python _analysis/vmlift.py vmtrace.jsonl --semantics --native-out 42_native.asm
-    python _analysis/vmlift.py --selftest
+    python vmlift.py vmtrace.jsonl
+    python vmlift.py vmtrace.jsonl --opcode-from mem --emit-x86 41_lift.asm
+    python vmlift.py vmtrace.jsonl --opcode-from reg:eax --mask 0xff
+    python vmlift.py vmtrace.jsonl --semantics --native-out 42_native.asm
+    python vmlift.py --selftest
 
 `--opcode-from` decides how the opcode is read out of each hit:
     reg:NAME   read the register captured at the breakpoint (default reg:eax)

@@ -37,6 +37,9 @@ The VM suite is stdlib-only and Windows-only where it debugs (`ctypes`).
 `peread`/`cli` are deliberately duplicated from `tools/`: this directory is
 self-contained, so `python tools/deob/autodeob.py` works from a bare checkout.
 
+Artefacts land in `out/auto/<sample>/` next to this file when run from source
+(gitignored), and next to the `.exe` when frozen - pass `--out` to change it.
+
 ## Keeping it in sync
 
 The research tree (`_analysis/`) is where these files are developed; this

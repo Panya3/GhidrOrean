@@ -23,8 +23,8 @@ opcode -> handler map: `sem` per handler is what `vmlift --semantics` must
 recover from before/after snapshots alone.
 
 Usage:
-    python _analysis/vmfix.py --out %TEMP%\\vmfix\\fixvm.exe
-    python _analysis/vmfix.py --out ... --json ground.json   # truth only
+    python vmfix.py --out %TEMP%\\vmfix\\fixvm.exe
+    python vmfix.py --out ... --json ground.json   # truth only
 """
 import json
 import os
@@ -257,7 +257,7 @@ def main(argv=None):
     for h in gt["handlers"]:
         print("   0x%02X -> +%-5X %-6s %-46s %s"
               % (h["opcode"], h["rva"], h["name"], h["sem"], h["asm"]))
-    print("next     : python _analysis\\vmtrace.py --selftest-vm")
+    print("next     : python vmtrace.py --selftest-vm")
     return 0
 
 
