@@ -9,6 +9,11 @@ dist/
 *.egg-info/
 .eggs/
 
+# Frozen binaries are release assets, never commits
+*.exe
+*.dll
+*.pdb
+
 # Virtual environments
 .venv/
 venv/
