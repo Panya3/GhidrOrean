@@ -43,6 +43,7 @@ The research tree (`_analysis/`) is where these files are developed; this
 directory is the published copy.  They must stay byte-identical:
 
 ```powershell
-powershell -File tools/deob/sync.ps1 -From ..\..\_analysis   # copy + report
-powershell -File tools/deob/sync.ps1 -From ..\..\_analysis -Check   # fail on drift
+powershell -File tools/deob/sync.ps1                       # copy from ..\..\..\_analysis
+powershell -File tools/deob/sync.ps1 -Check                 # exit 1 on drift
+powershell -File tools/deob/sync.ps1 -From C:\path\_analysis # explicit source
 ```
