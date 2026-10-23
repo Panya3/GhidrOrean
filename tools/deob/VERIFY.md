@@ -76,6 +76,13 @@ That asymmetry is the audit working as intended, and it is why the reported
   run - `cut 49800 (14.46%), 2385 reverted, struct ok`, 155.2 s end to end -
   and passes its own `--selftest-vm` (8/8), which is what proves the trace
   stage survived the rebuild.
+* the same stage runs in the 32-bit freeze (`dist\deob32.exe`, i386, 11.2 MB,
+  capstone 5.0.1 - the newest genuinely-i386 wheel): x3 gives
+  `cut 50081 (14.54%), 2426 reverted, struct ok` (77.3 s for that stage,
+  85.9 s for the run), and those artefacts pass all 15 checks under the
+  64-bit checker.  The +0.08 pp against the x64 build is capstone 5.0.1
+  reporting operand detail slightly differently (same 537179 instrs /
+  344419 reachable / 17.2% padding), not a difference in the proof.
 * `tools\deob\sync.ps1 -Check` reports `in sync: 15 files` (exit 0) with
   `devirt.py`, `autodeob.py`, `cfgpass.py`, the two checkers and this file
   hash-identical to `_analysis`.

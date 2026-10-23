@@ -29,6 +29,24 @@ research tree (it freezes this directory, `-Name deob32 -Python "py -3.11-32"`
 for the 32-bit one, output in `dist\`); `tools\build_exe.ps1` in this repo is
 for `OreanOffline.exe` only.
 
+Both builds carry every stage, native recovery included (`deob.exe` is x64,
+13.4 MB; `deob32.exe` is i386, 11.2 MB).  A 32-bit freeze needs a 32-bit
+capstone, and PyPI makes that a trap: 5.0.3+ publish no win32 wheel at all,
+and 5.0.2's `py3-none-win32` wheel ships an **x64** `capstone.dll` (ctypes
+answers `WinError 193 ... is not a valid Win32 application`).  5.0.1 is the
+newest genuinely-i386 wheel, so pin it:
+
+```
+py -3.11-32 -m pip install --only-binary=:all: "capstone==5.0.1"
+```
+
+Both then agree on the totals (537179 instrs, 344419 reachable, 17.2%
+padding) but not on the cuts: 5.0.1 reports operand/register detail slightly
+differently, so x3 comes out at 50081 cut / 2426 reverted on the x86 build
+against 49800 / 2385 on the x64 one (+0.08 pp).  Every cut is still proven
+under the capstone that ran, and the x86 artefacts pass `verify_devirt.py`
+15/15 under the x64 checker.
+
 ## Layout
 
 | file | role |
