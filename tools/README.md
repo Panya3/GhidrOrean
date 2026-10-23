@@ -35,8 +35,11 @@ they use the section's VirtualAddress, i.e. the whole blob.
 debugger that records opcode -> handler and per-opcode semantics from a *running*
 host, then inlines the observed stream as native x86-64).  It is a
 self-contained directory so `python tools/deob/autodeob.py` works from a bare
-checkout; `deob/sync.ps1 -Check` proves it still matches the parent repo's
-`_analysis/` tree.
+checkout.  `deob/sync.ps1 -Check` proves it still matches the parent repo's
+`_analysis/` tree, which is where those files are developed - that check is
+dev-only (`_analysis/` is not part of this repo) and `_analysis/build_exe.ps1`
+runs it before freezing anything, so a shipped `deob.exe` cannot come from
+source that exists nowhere else.
 
 ## One input at a time - and as a drag & drop `.exe`
 

@@ -1,7 +1,7 @@
 # deob - the full pipeline (static half + live trace), inside GhidrOrean
 
-`_analysis\autodeob.py` in the parent research tree, shipped here so a clone of
-this repo contains the whole tool.  One entry point, six stages:
+This is `_analysis\autodeob.py` from the parent research tree, shipped here so a
+clone of this repo contains the whole tool.  One entry point, six stages:
 
     unpack -> decode -> dejunk -> CFG/DCE -> (trace) -> lift/inline
 
@@ -15,11 +15,19 @@ python tools/deob/autodeob.py sample.xem --run Host.exe `
 python tools/deob/autodeob.py --selftest-vm               # proves stages 5-6 on a synthetic VM
 ```
 
+`--run` breaks on the dispatch site that the *static* half finds, so it needs a
+host whose payload unpacks (`.vlizer`-style section).  For a plain PE there is
+no such site and the trace fails with `no breakpoints`; trace that kind of
+target with `vmtrace.py --exec <t> --bp-rva 0x<site>` and fold the result in
+with `--trace <jsonl>` instead.
+
 `--selftest-vm` builds its own VM (`vmfix.py`), traces it, lifts it, inlines it
 and executes the result - nothing else is launched.  Frozen builds also accept
 `--run`, but only for a target of the same bitness (a debugger cannot cross
-WOW64): `tools/build_exe.ps1` in the parent repo builds `deob.exe` (x64) and
-`deob32.exe` (x86).
+WOW64).  The `.exe`s are built by `_analysis\build_exe.ps1` in the parent
+research tree (it freezes this directory, `-Name deob32 -Python "py -3.11-32"`
+for the 32-bit one, output in `dist\`); `tools\build_exe.ps1` in this repo is
+for `OreanOffline.exe` only.
 
 ## Layout
 
