@@ -12,6 +12,7 @@ do the steps that do not need Ghidra at all, from a normal `python3`.
 | `peread.py` | read-only PE section table (shared) |
 | `cli.py` | shared `-h` / arity / exit-code helpers (shared) |
 | `OreanOffline.py` | one entry point for the three stages above (the drag & drop target) |
+| `deob/autodeob.py` | the whole pipeline: unpack -> decode -> dejunk -> CFG/DCE -> (live trace) -> lift/inline x86-64 - see `deob/README.md` |
 | `build_exe.ps1` | freeze `OreanOffline.py` into a single `.exe` with PyInstaller |
 | `selftest.py` | builds its own inputs and checks all of the above |
 
@@ -23,6 +24,19 @@ do the steps that do not need Ghidra at all, from a normal `python3`.
 
 `xrkdecode` / `defus_offline` want the RVA of the VM bytecode; without `--rva`
 they use the section's VirtualAddress, i.e. the whole blob.
+
+## The full pipeline, including the dynamic half (`deob/`)
+
+    python tools/deob/autodeob.py sample.xem                     # static only
+    python tools/deob/autodeob.py sample.xem --run Host.exe      # + live trace
+    python tools/deob/autodeob.py --selftest-vm                  # no sample needed
+
+`deob/` is `OreanOffline.py` plus two more stages (dejunk DCE, and a Win32
+debugger that records opcode -> handler and per-opcode semantics from a *running*
+host, then inlines the observed stream as native x86-64).  It is a
+self-contained directory so `python tools/deob/autodeob.py` works from a bare
+checkout; `deob/sync.ps1 -Check` proves it still matches the parent repo's
+`_analysis/` tree.
 
 ## One input at a time - and as a drag & drop `.exe`
 
@@ -69,12 +83,13 @@ imported program and a cursor, so it stays a Ghidra script (use
   are *detected* and reported, but not unpacked.
 * Dejunk here is the peephole pass `Orean.py` falls back to when `GetVMSig()`
   finds no wild-VM signature; it is not whole-function CFG/liveness DCE.
-* The `.exe` is the static half only: no sample is ever executed, so full
-  devirtualisation still needs a runtime trace (`vmtrace` in the parent repo)
-  or the Ghidra side.  The parent repo's `deob.exe` does that too - it bundles
-  the tracer and `--run host.exe` recovers the opcode -> handler map, derives
-  per-opcode semantics and inlines the observed programme as native x86-64 in
-  one process (`--selftest-vm` proves that half on a synthetic VM).
+* `OreanOffline.exe` is the static half only: no sample is ever executed.  Full
+  devirtualisation needs the runtime trace in `deob/` (`--run host.exe` recovers
+  the opcode -> handler map, derives per-opcode semantics and inlines the
+  observed programme as native x86-64 in one process; `--selftest-vm` proves
+  that half on a synthetic VM).  Frozen `deob.exe`/`deob32.exe` come from the
+  parent repo's `_analysis/build_exe.ps1` and only trace targets of their own
+  bitness - a debugger cannot cross WOW64.
 * Decoding assumes the section is already decrypted/decompressed (it is, after
   `unpack_vlizer.py`).  On a protected file straight from disk the bytes are
   compressed+encrypted, the listing is meaningless by construction and the tool
