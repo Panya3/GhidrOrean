@@ -10,6 +10,9 @@ readable report next to the artifacts:
     3. decode    Oreans instruction stream -> listing + mnemonic histogram
     4. dejunk    Defus.Simple + deadstore sweep -> dejunked listing + stats
     5. cfg       whole-payload CFG + liveness DCE -> 40_cfg.lst (cfgpass.py)
+    5b. devirt   whole-section native recovery -> 41_devirt.lst + 42_devirt.json
+                 + 50_devirt.exe (devirt.py): padding/data split, CFG from real
+                 entry points, proof-checked cuts NOPped in place, re-decode check
     6. trace     optional: fold a vmtrace.jsonl (from vmtrace.py) into
                  41_vm.txt + 41_lift.asm (vmlift.py) - the dynamic half,
                  42_native.asm and 43_inline.asm/43_inline.txt
@@ -247,6 +250,47 @@ def stage_cfg(data, rva, workdir, res, opts):
     res["cfg"] = st
 
 
+def stage_devirt(pe_path, workdir, res, opts):
+    """Native recovery on the whole section -> 41_devirt.lst / 50_devirt.exe.
+
+    Unlike the two stages above this one works on the *image*, not on a decoded
+    window: it re-synchronises a decoder over the whole section, separates
+    padding/data from code, walks the CFG from real entry points, and NOPs only
+    what a local proof allows - then re-decodes the patched section to show the
+    instruction grid is untouched.
+    """
+    t0 = time.time()
+    try:
+        import devirt
+    except Exception as e:                  # no capstone / no wheel: stay useful
+        res["devirt"] = dict(status="unavailable",
+                             reason="%s: %s" % (type(e).__name__, e))
+        return res["devirt"]
+    try:
+        st = devirt.run(pe_path, workdir, write_pe=not opts.devirt_no_pe,
+                        write_listing=True, verbose=False)
+    except Exception as e:
+        res["devirt"] = dict(status="failed",
+                             reason="%s: %s" % (type(e).__name__, e),
+                             seconds=round(time.time() - t0, 1))
+        return res["devirt"]
+    res["devirt"] = dict(
+        status="ok",
+        section=st["section"], section_bytes=st["section_bytes"],
+        instructions=st["instructions"], undecodable=st["undecodable"],
+        padding_pct=st["padding_pct"], padding_runs=st["padding_runs"],
+        seeds=st["seeds"], reachable_instrs=st["reachable_instrs"],
+        reachable_pct=st["reachable_pct"],
+        unreachable_pct=st["unreachable_pct"],
+        candidates=st["candidates"], removed=st["removed"],
+        removed_pct=st["removed_pct"], reverted=st["reverted"],
+        removed_by=st["removed_by"], kept=st["kept"],
+        indirect=st["indirect"], structural=st["structural"],
+        listing=st.get("listing"), patched_pe=st.get("patched_pe"),
+        seconds=round(time.time() - t0, 1))
+    return res["devirt"]
+
+
 def stage_trace(workdir, res, opts):
     """Fold a vmtrace.jsonl into 41_vm.txt + 41_lift.asm (no execution)."""
     import vmlift                       # stdlib-only; lazy = optional in .exe
@@ -474,10 +518,18 @@ def verdict(info, res):
         else:
             tail = ("level 2 needs a runtime trace: --run <host.exe> (built in) "
                     "or --trace <vmtrace.jsonl>")
+        dv = res.get("devirt") or {}
+        dv_text = ""
+        if dv.get("status") == "ok":
+            dv_text = (", native recovery -%d instrs (%.1f%% of reachable, "
+                       "%d padding runs / %.1f%%)"
+                       % (dv["removed"], dv["removed_pct"], dv["padding_runs"],
+                          dv["padding_pct"]))
         return ("unpacked, %.3f%% decodable (%d instrs); peephole dejunk -%.1f%%, "
-                "CFG+DCE -%.1f%% - %s"
+                "CFG+DCE -%.1f%%%s - %s"
                 % (100.0 - bad, de["instructions"], dj["total_removed_pct"],
-                   (res.get("cfg") or {}).get("removed_pct", 0.0), tail))
+                   (res.get("cfg") or {}).get("removed_pct", 0.0), dv_text,
+                   tail))
     return ("unpacked, %.3f%% decodable (%d instrs); dejunk skipped"
             % (100.0 - bad, de["instructions"]))
 
@@ -555,6 +607,21 @@ def process(path, outroot, opts):
                           "%d block(s) not modelled"
                           % (v["tested"], v["trials"], v["failures"],
                              v["skipped"]))
+
+            if not getattr(opts, "no_devirt", False):
+                dv = stage_devirt(pe, workdir, res, opts)
+                if dv.get("status") == "ok":
+                    print("   devirt: %d instrs in %s (%X bytes), padding %.1f%%, "
+                          "reachable %.1f%% (%d), cut %d (%.2f%%), %d reverted, "
+                          "struct %s  (%.1fs)"
+                          % (dv["instructions"], dv["section"],
+                             dv["section_bytes"], dv["padding_pct"],
+                             dv["reachable_pct"], dv["reachable_instrs"],
+                             dv["removed"], dv["removed_pct"], dv["reverted"],
+                             dv["structural"]["status"], dv["seconds"]))
+                else:
+                    print("   devirt: %s (%s)" % (dv.get("status"),
+                                                  dv.get("reason", "")))
 
     if opts.run:
         # pe is the *unpacked* payload; without it vmtrace has no sites to break
@@ -649,8 +716,8 @@ def write_summary(results, outroot):
         "Generated %s by `%s` (static only, nothing executed)."
         % (time.strftime("%Y-%m-%d %H:%M:%S"), tool),
         "",
-        "| file | kind | scheme | payload | instrs | invalid | dejunk (-%) | cfg (-%) | verdict |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| file | kind | scheme | payload | instrs | invalid | dejunk (-%) | cfg (-%) | devirt (-%) | verdict |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for r in sorted(rows.values(),
                     key=lambda r: os.path.basename(r["file"]).lower()):
@@ -658,7 +725,8 @@ def write_summary(results, outroot):
         de = r.get("decode") or {}
         dj = r.get("dejunk") or {}
         cg = r.get("cfg") or {}
-        lines.append("| `%s` | %s | %s | %s | %s | %s | %s | %s | %s |" % (
+        dvt = r.get("devirt") or {}
+        lines.append("| `%s` | %s | %s | %s | %s | %s | %s | %s | %s | %s |" % (
             os.path.basename(r["file"]),
             i.get("kind", "-"),
             i.get("scheme", "-"),
@@ -667,6 +735,7 @@ def write_summary(results, outroot):
             ("%.3f%%" % de["invalid_pct"]) if de else "-",
             ("%.1f%%" % dj["total_removed_pct"]) if dj else "-",
             ("%.1f%%" % cg["removed_pct"]) if cg else "-",
+            ("%.1f%%" % dvt["removed_pct"]) if dvt.get("status") == "ok" else "-",
             r["verdict"],
         ))
     if any(r.get("vm") for r in results):
@@ -697,6 +766,8 @@ def write_summary(results, outroot):
         "| `20_payload.lst` | full decode (`addr  bytes  mnemonic`) - ground truth stream |",
         "| `30_dejunk.lst` | same stream after `Defus.Simple` + deadstore, per block |",
         "| `40_cfg.lst` | whole-payload CFG + liveness DCE (`cfgpass.py`), block headers |",
+        "| `41_devirt.lst` | native-recovery listing (`devirt.py`): every instruction with its reachability and cut/proof verdict |",
+        "| `50_devirt.exe` | same PE with the proven-dead instructions replaced by `0x90` in place (no byte ever moves) |",
         "| `result.json` | all numbers above, machine-readable (sections, header, histogram) |",
         "",
         "## Limits (by construction)",
@@ -706,6 +777,15 @@ def write_summary(results, outroot):
         "- the CFG stage is global but still a *removal* pass: it only deletes",
         "  instructions whose registers/flags are dead on every path, ~9% (measured;",
         "  no cancelling `ADD`/`SUB` chains exist to fold, see REPORT.md section 7).",
+        "- the devirt stage works on the image instead of a window. Measured on the",
+        "  four corpus builds: 17-21% of `.vlizer` is zero/`0xCC` padding, 7-9% is",
+        "  never reached from any real entry point, and only 11-15% of the *reachable*",
+        "  instructions can be cut with a local proof (the audit demands a redefinition",
+        "  *inside* the same block, so long mode - 16 GPRs spreading the junk out -",
+        "  keeps fewer cuts than 32-bit). Reachability is deliberately",
+        "  high (~75% of the section) because the mutation junk is interleaved with",
+        "  the real code and falls through into it - it is live, just useless, so",
+        "  removing it needs value propagation (rewriting operands), not DCE.",
         "- devirtualisation is impossible statically: handlers are generated at runtime,",
         "  so the file contains no handler table to lift (REPORT.md section 3.4).",
         "  The dynamic pair `vmtrace.py` + `vmlift.py` closes that gap: it recovers",
@@ -841,6 +921,13 @@ def main():
                     help="bytes of payload for the CFG stage, 0 = whole payload")
     ap.add_argument("--cfg-rounds", type=int, default=8,
                     help="max DCE iterations (default 8)")
+    ap.add_argument("--no-devirt", action="store_true",
+                    help="skip the native-recovery stage (41_devirt.lst / "
+                         "50_devirt.exe); it decodes the whole section and "
+                         "takes ~1 min per MB")
+    ap.add_argument("--devirt-no-pe", action="store_true",
+                    help="write the devirt listing but not the patched "
+                         "50_devirt.exe")
     ap.add_argument("--cfg-verify", type=int, default=8, metavar="N",
                     help="differential-oracle trials per block (0 = off, default 8)")
     ap.add_argument("--no-listing", action="store_true",

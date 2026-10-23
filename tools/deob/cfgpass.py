@@ -694,6 +694,31 @@ def _flags(st, res, sz, cf=None, of=None):
     return res
 
 
+def _flags_word(st):
+    """EFLAGS image of the modelled flags (IF and bit 1 are always set)."""
+    w = 0x202
+    if st.cf:
+        w |= 1
+    if st.pf:
+        w |= 4
+    if st.zf:
+        w |= 0x40
+    if st.sf:
+        w |= 0x80
+    if st.of:
+        w |= 0x800
+    return w
+
+
+def _load_flags(st, w):
+    """Inverse of _flags_word: only the five modelled flags are updated."""
+    st.cf = bool(w & 1)
+    st.pf = bool(w & 4)
+    st.zf = bool(w & 0x40)
+    st.sf = bool(w & 0x80)
+    st.of = bool(w & 0x800)
+
+
 def _jcc_taken(rid, st):
     O = xrkdsm
     if rid == O.OP_JA:
@@ -826,6 +851,40 @@ def _step(st, x):
         a, b = _rd(st, o0), _rd(st, o1)
         _wr(st, o0, b)
         _wr(st, o1, a)
+    elif rid in (O.OP_PUSH, O.OP_POP):
+        # stack model: PUSH writes below ESP, POP reads at ESP.  Both are needed
+        # by the dejunk verifier - junk blocks are full of push/pop pairs.
+        sp = st.r[4]
+        if rid == O.OP_PUSH:
+            v = _rd(st, o0)
+            sp = (sp - 4) & 0xFFFFFFFF
+            _mem_put(st, sp, 4, v & 0xFFFFFFFF)
+            st.r[4] = sp
+        else:
+            v = _mem_get(st, sp, 4)
+            st.r[4] = (sp + 4) & 0xFFFFFFFF
+            _wr(st, o0, v)
+    elif rid == O.OP_PUSHF:
+        sp = (st.r[4] - 4) & 0xFFFFFFFF
+        _mem_put(st, sp, 4, _flags_word(st))
+        st.r[4] = sp
+    elif rid == O.OP_POPF:
+        sp = st.r[4]
+        w = _mem_get(st, sp, 4)
+        st.r[4] = (sp + 4) & 0xFFFFFFFF
+        _load_flags(st, w)
+    elif rid == O.OP_LEAVE:
+        st.r[4] = st.r[5]
+        st.r[5] = _mem_get(st, st.r[4], 4)
+        st.r[4] = (st.r[4] + 4) & 0xFFFFFFFF
+    elif rid == O.OP_RETN:
+        st.r[4] = (st.r[4] + 4) & 0xFFFFFFFF
+        return True
+    elif rid in (O.OP_CLC, O.OP_STC, O.OP_CMC):
+        st.cf = (False if rid == O.OP_CLC else True if rid == O.OP_STC
+                 else not st.cf)
+    elif rid in (O.OP_CLD, O.OP_STD):
+        pass                            # direction flag: no modelled consumer
     elif rid == O.OP_JMP or rid in COND_JMP_IDS:
         if rid in COND_JMP_IDS:
             _jcc_taken(rid, st)

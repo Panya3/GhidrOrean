@@ -1,11 +1,11 @@
 # deob - the full pipeline (static half + live trace), inside GhidrOrean
 
 This is `_analysis\autodeob.py` from the parent research tree, shipped here so a
-clone of this repo contains the whole tool.  One entry point, six stages:
+clone of this repo contains the whole tool.  One entry point, seven stages:
 
-    unpack -> decode -> dejunk -> CFG/DCE -> (trace) -> lift/inline
+    unpack -> decode -> dejunk -> CFG/DCE -> devirt -> (trace) -> lift/inline
 
-Stage 5-6 need the sample to *run*, everything before them does not.
+Only the last two need the sample to *run*; everything before them does not.
 
 ```powershell
 python tools/deob/autodeob.py sample.xem                 # static only, no execution
@@ -36,10 +36,14 @@ for `OreanOffline.exe` only.
 | `autodeob.py` | CLI + the six stages |
 | `defus.py`, `oreandec.py`, `unpack.py`, `peread.py`, `cli.py` | static stages (ports of the Ghidra code path) |
 | `cfgpass.py` | CFG + liveness DCE for the decoded bytecode |
+| `devirt.py` | native recovery on the whole image: padding/data split, reachability from real entries, proof-checked cuts NOPped in place (`41_devirt.lst`, `50_devirt.exe`) |
 | `vmtrace.py` | Win32 debugger: breakpoint on the dispatch site, records opcode + state |
 | `vmlift.py` | turns the trace into handlers, semantics and an x86-64 listing |
 | `vminline.py` | inlines the observed opcode stream as native x86-64 |
 | `vmfix.py` | synthetic VM used as the differential oracle (`--selftest-vm`) |
+| `test_devirt_identity.py` | unit checks for the effect model behind every cut (17 cases, both bitnesses) |
+| `verify_devirt.py` | re-checks 15 invariants of a finished run from `42_devirt.json` + `50_devirt.exe` |
+| `VERIFY.md` | the write-up: measured numbers, the invariants, and what is deliberately *not* proved |
 
 The VM suite is stdlib-only and Windows-only where it debugs (`ctypes`).
 `peread`/`cli` are deliberately duplicated from `tools/`: this directory is
@@ -47,6 +51,37 @@ self-contained, so `python tools/deob/autodeob.py` works from a bare checkout.
 
 Artefacts land in `out/auto/<sample>/` next to this file when run from source
 (gitignored), and next to the `.exe` when frozen - pass `--out` to change it.
+
+## Proving the cuts
+
+`devirt.py` never cuts an instruction because a global liveness pass says its
+value is dead: the DCE pass only *proposes* (`candidates`), and a local audit
+disposes (`removed` / `reverted`).  A cut is accepted only when
+
+* the same basic block redefines the written register before any read of it, or
+* the instruction is a value-preserving identity (`add rax, 0`, `mov rax, rax`,
+  `lea rax, [rax]`, `and rax, -1`) - flags aside, and the audit proves the flags
+  dead separately.
+
+A 32-bit operation in long mode is **not** an identity even when it reads and
+writes the same register: `mov eax, eax` zero-extends, so dropping it would
+change `rax`.  That one width test is what keeps the relaxation sound, and
+`test_devirt_identity.py` pins it down for both bitnesses.
+
+Measured on the four corpus builds (`--engine audit`, 2026-10-23):
+
+| build | bits | cut | % of reachable | reverted | struct |
+|---|---|---|---|---|---|
+| x3 | 32 | 49800 | 14.46% | 2385 | ok |
+| x3_x64 | 64 | 51780 | 11.02% | 10640 | ok |
+| xcorona | 32 | 40630 | 12.09% | 2028 | ok |
+| xcorona_x64 | 64 | 65060 | 13.93% | 9986 | ok |
+
+Long mode reverts more often (17% vs 4-5%) because the audit insists on a
+same-block redefinition while 16 GPRs spread the junk thin - the reported cut is
+a floor, not a ceiling, on what is provably dead.  `VERIFY.md` lists the 15
+invariants and the "not proved" items; `verify_devirt.py <artefact root> -v`
+re-checks a finished run without re-decoding the section.
 
 ## Keeping it in sync
 

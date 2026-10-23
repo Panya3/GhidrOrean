@@ -17,7 +17,8 @@ $From = (Resolve-Path $From).Path
 
 $files = @("autodeob.py", "cfgpass.py", "defus.py", "oreandec.py", "unpack.py",
            "peread.py", "cli.py", "vmtrace.py", "vmlift.py", "vminline.py",
-           "vmfix.py")
+           "vmfix.py", "devirt.py", "test_devirt_identity.py",
+           "verify_devirt.py", "VERIFY.md")
 
 $drift = @()
 foreach ($f in $files) {
